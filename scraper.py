@@ -85,3 +85,5 @@ def scrape_dwc_terms(url):
             # Convert each dictionary to a JSON string and write it to the file
             json_line = json.dumps(term_detail)
             outfile.write(json_line + '\n')
+
+print("nice work!")
