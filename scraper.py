@@ -36,7 +36,111 @@ def fetch_and_write_github_dwc_issues(token, repo_name="tdwg/dwc", output_filena
         print(f"Failed to fetch issues. Status code: {response.status_code}")
         print(f"Response body: {response.text}")
 
+def fetch_and_write_github_ac_issues(token, repo_name="tdwg/ac", output_filename="tdwg_ac_issuetracker.jsonl"):
+    """Fetch GitHub issues for the specified repository and write them to a .jsonl file"""
+    
+    # Configure the request headers with the provided authentication token
+    headers = {'Authorization': f'token {token}'}
+    
+    # Construct the URL for fetching issues from the specified repository
+    url = f"https://api.github.com/repos/{repo_name}/issues"
+    
+    # Make the request to get issues
+    response = requests.get(url, headers=headers)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        issues = response.json()
+        
+        # Open a file to write the issues data
+        with open(output_filename, "w") as file:
+            for issue in issues:
+                # Extract the title as prompt and body as completion from each issue
+                prompt = issue["title"]
+                completion = issue["body"]  # Consider preprocessing to remove markdown, URLs, etc.
+                
+                # Format the data as a JSON object (dictionary in Python)
+                formatted_data = {"prompt": prompt, "completion": completion}
+                
+                # Convert the dictionary to a JSON string and write it to the file with a newline
+                json_line = json.dumps(formatted_data)
+                file.write(json_line + "\n")
+    else:
+        # Print an error message if the request failed
+        print(f"Failed to fetch issues. Status code: {response.status_code}")
+        print(f"Response body: {response.text}")
 # URL of the page to scrape
+
+def fetch_and_write_github_ltc_issues(token, repo_name="tdwg/ltc", output_filename="tdwg_ltc_issuetracker.jsonl"):
+    """Fetch GitHub issues for the specified repository and write them to a .jsonl file"""
+    
+    # Configure the request headers with the provided authentication token
+    headers = {'Authorization': f'token {token}'}
+    
+    # Construct the URL for fetching issues from the specified repository
+    url = f"https://api.github.com/repos/{repo_name}/issues"
+    
+    # Make the request to get issues
+    response = requests.get(url, headers=headers)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        issues = response.json()
+        
+        # Open a file to write the issues data
+        with open(output_filename, "w") as file:
+            for issue in issues:
+                # Extract the title as prompt and body as completion from each issue
+                prompt = issue["title"]
+                completion = issue["body"]  # Consider preprocessing to remove markdown, URLs, etc.
+                
+                # Format the data as a JSON object (dictionary in Python)
+                formatted_data = {"prompt": prompt, "completion": completion}
+                
+                # Convert the dictionary to a JSON string and write it to the file with a newline
+                json_line = json.dumps(formatted_data)
+                file.write(json_line + "\n")
+    else:
+        # Print an error message if the request failed
+        print(f"Failed to fetch issues. Status code: {response.status_code}")
+        print(f"Response body: {response.text}")
+# URL of the page to scrape
+
+def fetch_and_write_github_hc_issues(token, repo_name="tdwg/hc", output_filename="tdwg_hc_issuetracker.jsonl"):
+    """Fetch GitHub issues for the specified repository and write them to a .jsonl file"""
+    
+    # Configure the request headers with the provided authentication token
+    headers = {'Authorization': f'token {token}'}
+    
+    # Construct the URL for fetching issues from the specified repository
+    url = f"https://api.github.com/repos/{repo_name}/issues"
+    
+    # Make the request to get issues
+    response = requests.get(url, headers=headers)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        issues = response.json()
+        
+        # Open a file to write the issues data
+        with open(output_filename, "w") as file:
+            for issue in issues:
+                # Extract the title as prompt and body as completion from each issue
+                prompt = issue["title"]
+                completion = issue["body"]  # Consider preprocessing to remove markdown, URLs, etc.
+                
+                # Format the data as a JSON object (dictionary in Python)
+                formatted_data = {"prompt": prompt, "completion": completion}
+                
+                # Convert the dictionary to a JSON string and write it to the file with a newline
+                json_line = json.dumps(formatted_data)
+                file.write(json_line + "\n")
+    else:
+        # Print an error message if the request failed
+        print(f"Failed to fetch issues. Status code: {response.status_code}")
+        print(f"Response body: {response.text}")
+
+
 
 def scrape_dwc_terms(url="https://dwc.tdwg.org/terms/", output_filename="dwc_terms.jsonl"):
     # Make the request to get the page content
@@ -134,5 +238,3 @@ def avc_term_scraper(url="https://ac.tdwg.org/termlist/", output_filename='avc_t
             # Convert each dictionary to a JSON string and write it to the file
             json_line = json.dumps(term)
             outfile.write(json_line + '\n')
-
-avc_term_scraper()
