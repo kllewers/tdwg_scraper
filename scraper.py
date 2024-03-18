@@ -142,56 +142,105 @@ def fetch_and_write_github_hc_issues(token, repo_name="tdwg/hc", output_filename
 
 
 
-def scrape_dwc_terms(url="https://dwc.tdwg.org/terms/", output_filename="dwc_terms.jsonl"):
-    # Make the request to get the page content
+def scrape_dwc_terms(url="https://dwc.tdwg.org/terms/", filename="dwc_terms.jsonl"):
+
+    # Send a GET request to the page
     response = requests.get(url)
+
+    # Parse the HTML content of the page
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Extract the page title from the <head> section and add it as the first term
-    page_title = soup.head.find('title').text.strip()
-    terms_details = [{'Term': 'Page Title', 'Definition': page_title, 'Comments': '', 'Examples': []}]
+    # Initialize an empty list to hold all terms
+    terms = []
 
-    # Find all tables - assuming each set of term details is in its own table
-    tables = soup.find_all('table')
+    # Find all tables and iterate over them
+    for table in soup.find_all('table'):
+        # Initialize an empty dictionary for the term
+        term_data = {}
+        
+        # Extracting term name from the table's heading
+        heading = table.find('th').text.strip()
+        # Removing "Term Name: " prefix and updating to just "Term"
+        term_name = heading.replace('Term Name: ', '')
+        if term_name.startswith('Term Name '):
+            term_name = term_name.replace('Term Name  ', '', 1)
+        term_data['Term'] = term_name
+        # Additional step to remove "Term Name " prefix if it exists
 
-    # Process each table for DwC terms
-    for table in tables:
-        term_details = {}
-        rows = table.find_all('tr')
-        for row in rows:
-            first_td = row.find('td')
-            # Check if the row contains at least one <td>
-            if first_td:
-                # Assuming the first column is always the field name
-                field_name = first_td.text.strip()
-                # Handle the Identifier specifically to extract the last part of the URL
-                if field_name.lower() == 'identifier':
-                    url = first_td.find_next_sibling('td').find('a')['href']
-                    identifier_last_part = url.split('/')[-1]  # Get the last part after the last slash
-                    term_details['Term'] = identifier_last_part
-                else:
-                    # The second column is the field value for other fields
-                    field_value = first_td.find_next_sibling('td').text.strip()
-                    # Special handling for examples which might have a list structure
-                    if field_name.lower() == 'examples':
-                        examples = first_td.find_next_sibling('td').find_all('li')
-                        field_value = [example.text.strip() for example in examples]
-                    term_details[field_name] = field_value
+        
+        # Iterate over all rows in the table body to extract term details
+        for row in table.find('tbody').find_all('tr'):
+            cells = row.find_all('td')
+            if cells and len(cells) > 1:
+                # Assuming the first cell is the key and the second is the value
+                key = cells[0].text.strip()
+                value = cells[1].text.strip()
+                # Special handling for URLs
+                if cells[1].find('a'):
+                    value = cells[1].find('a')['href']
+                term_data[key] = value
 
-        # Add the collected term details to the list if it's not empty
-        if term_details:
-            terms_details.append(term_details)
+        # Add the populated term data to the terms list
+        terms.append(term_data)
+
+    # Specify the filename where the output should be saved
+    file_name = filename
 
     # Write the output to a .jsonl file
-    with open(output_filename, 'w') as outfile:
-        for term_detail in terms_details:
-            # Convert each dictionary to a JSON string and write it to the file
-            json_line = json.dumps(term_detail)
+    with open(file_name, 'w') as outfile:
+        for term in terms:
+            json_line = json.dumps(term)
             outfile.write(json_line + '\n')
 
+    print(f"Data extracted and saved to {file_name}")
 
+def scrape_ac_terms(url="https://ac.tdwg.org/termlist/", filename="ac_terms.jsonl"):
+    response = requests.get(url)
 
-def avc_term_scraper(url="https://ac.tdwg.org/termlist/", output_filename='avc_terms.jsonl'):
+    # Parse the HTML content of the page
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Initialize an empty list to hold all terms
+    terms = []
+
+    # Find all tables and iterate over them
+    for table in soup.find_all('table'):
+        # Initialize an empty dictionary for the term
+        term_data = {}
+        
+        # Extracting term name from the table's heading
+        heading = table.find('th').text.strip()
+        # Removing "Term Name: " prefix and updating to just "Term"
+        term_name = heading.replace('Term Name: ', '')
+        term_data['Term'] = term_name
+        
+        # Iterate over all rows in the table body to extract term details
+        for row in table.find('tbody').find_all('tr'):
+            cells = row.find_all('td')
+            if cells and len(cells) > 1:
+                # Assuming the first cell is the key and the second is the value
+                key = cells[0].text.strip()
+                value = cells[1].text.strip()
+                # Special handling for URLs
+                if cells[1].find('a'):
+                    value = cells[1].find('a')['href']
+                term_data[key] = value
+
+        # Add the populated term data to the terms list
+        terms.append(term_data)
+
+    # Specify the filename where the output should be saved
+    file_name = filename
+
+    # Write the output to a .jsonl file
+    with open(file_name, 'w') as outfile:
+        for term in terms:
+            json_line = json.dumps(term)
+            outfile.write(json_line + '\n')
+
+    print(f"Data extracted and saved to {file_name}")
+
+def scrape_ltc_terms(url="https://ltc.tdwg.org/terms/", filename="ltc_terms.jsonl"):
     # Send a GET request to the page
     response = requests.get(url)
 
@@ -201,40 +250,39 @@ def avc_term_scraper(url="https://ac.tdwg.org/termlist/", output_filename='avc_t
     # Initialize a list to store the scraped data
     terms_data = []
 
-    # Find all table elements in the HTML
-    tables = soup.find_all('table')
+    # The given HTML seems to be a series of tables or similar structure for each term
+    # Let's find each term's table and extract information
+    tables = soup.find_all('table', class_='table-compact')  # Assuming class to narrow down
 
-    # Iterate through each table to extract term information
     for table in tables:
         term_data = {}
-        rows = table.find_all('tr')
-        for row in rows:
-            cells = row.find_all('td')
-            if not cells:
-                term_name_content = row.find('th').get_text(strip=True)
-                # Check if the term name content actually contains the expected delimiter
-                if ': ' in term_name_content:
-                    term_name = term_name_content.split(': ')[1]
-                else:
-                    # Handle the case where the delimiter is not found (e.g., set to a default value or skip)
-                    term_name = "Unknown or Malformed Term Name"
-                term_data['Term Name'] = term_name
-            else:
-                key = cells[0].get_text(strip=True)
-                if 'Required:' in key:
-                    required_repeatable = cells[1].get_text(strip=True).split(' -- ')
-                    term_data['Required'] = required_repeatable[0].split(': ')[1] if len(required_repeatable) > 0 else "Unknown"
-                    term_data['Repeatable'] = required_repeatable[1].split(': ')[1] if len(required_repeatable) > 1 else "Unknown"
-                else:
-                    value = cells[1].get_text(strip=True)
-                    if cells[1].find('a'):
-                        value = cells[1].find('a')['href']
-                    term_data[key] = value
-        terms_data.append(term_data)
+        # Iterate through each row in the table
+        for row in table.find_all('tr'):
+            # Try to extract data from both 'th' and 'td' elements
+            header = row.find('th').get_text(strip=True) if row.find('th') else None
+            value = row.find('td').get_text(strip=True) if row.find('td') else None
+
+            # Check for link in 'td' and possibly override the value with the href attribute
+            if row.find('td') and row.find('td').find('a'):
+                value = row.find('td').find('a')['href']
+
+            if header and value:
+                if header == "Qualified Term":
+                    header = "Term"
+                term_data[header] = value
+
+            
+
+        if term_data:  # Ensure it's not empty
+            terms_data.append(term_data)
+
+    # Specify the filename where the output should be saved
+    file_name = filename
 
     # Write the output to a .jsonl file
-    with open(output_filename, 'w') as outfile:
+    with open(file_name, 'w') as outfile:
         for term in terms_data:
-            # Convert each dictionary to a JSON string and write it to the file
             json_line = json.dumps(term)
             outfile.write(json_line + '\n')
+
+    print(f"Data extracted and saved to {file_name}")   
